@@ -106,15 +106,5 @@ public class DBProject extends JFrame {
     } 
     DBProject app = new DBProject();
   }
-
-  protected JComponent makeTextPanel(String text) {
-    JPanel panel = new JPanel(false);
-    // TODO get rid of this and fill in as needed
-    JLabel filler = new JLabel(text);
-    filler.setHorizontalAlignment(JLabel.CENTER);
-    panel.setLayout(new GridLayout(1, 1));
-    panel.add(filler);
-    return panel;
-  }
   
 }
