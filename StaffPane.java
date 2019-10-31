@@ -44,38 +44,47 @@ public class StaffPane extends JPanel {
 
   public StaffPane() {
     super(false);
-
     JPanel top = createTopPanel();
 
-    JPanel bottom = new JPanel();
-    JTextArea results = new JTextArea(8, 40);
-    bottom.add(results);
+    JPanel bottom = createBottomPanel();
 
     // create a splitpane 
     JSplitPane sl = new JSplitPane(SwingConstants.HORIZONTAL, top, bottom);
 
-    add(sl);
+    add(sl, BorderLayout.CENTER);
   }
 
   protected JPanel createTopPanel() {
     JPanel top = new JPanel(); 
-    top.setLayout(new BoxLayout(top, BoxLayout.LINE_AXIS));
+    // top.setLayout(new BoxLayout(top, BoxLayout.LINE_AXIS));
 
-    // Container left = createInputSelection();
+    Container left = createInputSelection();
 
-    Container right = createLists();
+    Container right = createTableList();
 
-    // top.add(left);
-    top.add(right);
+    top.add(left, BorderLayout.LINE_START);
+    top.add(right, BorderLayout.LINE_END);
 
     return top;
+  }
+
+  protected JPanel createBottomPanel() {
+    JPanel bottom = new JPanel();
+    JTextArea results = new JTextArea(10, 20);
+
+    Container right = createAttrList();
+
+    bottom.add(results, BorderLayout.LINE_START);
+    bottom.add(right, BorderLayout.LINE_END);
+  
+    return bottom;
   }
 
   protected Container createInputSelection() {
     Container top = new Container();
     top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
     
-    JTextArea requestArea = new JTextArea(4, 4);
+    JTextArea requestArea = new JTextArea(8, 10);
     top.add(requestArea);
 
     Container bottom = new Container();
@@ -86,33 +95,50 @@ public class StaffPane extends JPanel {
     clearBtn.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         // TODO clear the TextArea and deselect the lists
+        requestArea.setText(null);
       }
     });
     JButton submitBtn = new JButton("Submit");
 
     bottom.add(clearBtn);
     bottom.add(submitBtn);
-
     top.add(bottom);
+    
     return top;
   }
 
-  protected Container createLists(){
+  protected Container createTableList(){
     Container contain = new Container();
-    contain.setLayout(new BoxLayout(contain, BoxLayout.PAGE_AXIS));
+    contain.setMinimumSize(new Dimension(50, 100)); // width, height
+    // JPanel top = new JPanel();
+    JLabel lTop = new JLabel("Available Tables");
+    JList tables = new JList();
+    
+    tables.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+    tables.setLayoutOrientation(JList.VERTICAL_WRAP);
+    contain.add(lTop);
+    contain.add(tables);
 
-    JList top = new JList();
-    top.setMinimumSize(new Dimension(200, 100));
-    top.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-    top.setLayoutOrientation(JList.VERTICAL_WRAP);
+    // JPanel bottom = new JPanel();
+    // JLabel lBottom = new JLabel("Available Attributes");
+    // JList attrs = new JList();
+    // attrs.setLayoutOrientation(JList.VERTICAL_WRAP);
+    // bottom.add(lBottom);
+    // bottom.add(attrs);
 
-    JList bottom = new JList();
+    return contain;
+  }
 
-    bottom.setLayoutOrientation(JList.VERTICAL_WRAP);
-    bottom.setMinimumSize(new Dimension(200, 100));
+  protected Container createAttrList(){
+    Container contain = new Container();
+    contain.setMinimumSize(new Dimension(50, 100)); // width, height
 
-    contain.add(top);
-    contain.add(bottom);
+    JLabel lTop = new JLabel("Available Attributes");
+    JLabel lBottom = new JLabel("Available Attributes");
+    JList attrs = new JList();
+    attrs.setLayoutOrientation(JList.VERTICAL_WRAP);
+    contain.add(lBottom);
+    contain.add(attrs);
 
     return contain;
   }
