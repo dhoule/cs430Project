@@ -52,7 +52,7 @@ public class DBProject extends JFrame {
   String queryString="Select * from emp";    /*Create query string*/
   // TODO credentials moved to tempStash
   String result=new String();
-
+  StaffPane panel2;
   /**
    * Class constructor
    **/
@@ -64,17 +64,18 @@ public class DBProject extends JFrame {
       public void setSelectedIndex(int index) {
         // Determine what tab has been selected; starts with 0
         if (index == 1) {
-          // TODO uncomment this
           // This is the "Staff Options"
-          // LoginPane loginP = new LoginPane(DBProject.this);
-          // loginP.setVisible(true);
+          LoginPane loginP = new LoginPane(DBProject.this);
+          loginP.setVisible(true);
           
-          // if(loginP.isSucceeded()){
+          if(loginP.isSucceeded()){
+            panel2.setUserName(loginP.getUsername());
+            panel2.setPassword(loginP.getPassword());
             super.setSelectedIndex(index);
-          // }
-          // else {
-          //   super.setSelectedIndex(0);
-          // }
+          }
+          else {
+            super.setSelectedIndex(0);
+          }
         }
         else {
           super.setSelectedIndex(index);
@@ -85,7 +86,7 @@ public class DBProject extends JFrame {
     CustomerPane panel1 = new CustomerPane();
     tabbedPane.addTab("Customer Options", panel1);
 
-    StaffPane panel2 = new StaffPane();
+    panel2 = new StaffPane();
     tabbedPane.addTab("Staff Options", panel2);
 
     //Add the tabbed pane to this panel.
