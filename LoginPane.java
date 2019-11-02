@@ -1,5 +1,9 @@
 package cs430Project;
 
+import java.util.*;
+import java.io.*;
+import java.sql.*;
+import java.util.Vector;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -13,6 +17,10 @@ public class LoginPane extends JDialog {
   private JButton btnLogin;
   private JButton btnCancel;
   private boolean succeeded;
+
+  private String usr;
+  private String psw;
+
 
   public LoginPane(Frame parent) {
   	super(parent, "Login", true);
@@ -84,11 +92,15 @@ public class LoginPane extends JDialog {
   }
 
   public String getUsername() {
-    return tfUsername.getText().trim();
+    if(null == usr)
+      usr = tfUsername.getText().trim();
+    return usr;
   }
 
   public String getPassword() {
-    return new String(pfPassword.getPassword());
+    if(null == psw)
+      psw = new String(pfPassword.getPassword());
+    return psw;
   }
 
   public boolean isSucceeded() {
@@ -100,10 +112,37 @@ public class LoginPane extends JDialog {
     // TODO Make this real
     // Connection con=DriverManager.getConnection(url,user,passwd);
     // System.out.println("Connection sucessful");
-    //TODO delete the below code
-    if (user.equals("scott") && passwd.equals("hobbes")) {
-      return true;
+    String result=new String();
+    String url="jdbc:oracle:thin:@131.230.133.11:1521:cs";    /*Using oracle driver and CS oracle server*/
+    //String user="scott";     /*user id which is a demo account offered by oracle*/
+    //String passwd="tiger";    /*password*/
+    
+    //Must put into try and catch because Exception will be thrown when the driver can not be found
+    try {
+      //Register the oracle driver with DriverManager
+      DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
+      System.out.println("Done with driver registrations!");
+    }catch(Exception ex){
+      System.err.println("can't find the driver");
     }
-    return false;
+    //Must put into try and catch because connecting to SQL server and execute SQL query will throw SQLExeption in Java
+    try {
+      System.out.println("Trying to connect...");
+
+      //Create connection with oracle server
+      Connection con=DriverManager.getConnection(url,user,passwd);
+      System.out.println("Connection sucessful");
+      
+      con.close();
+      return true;
+    }catch(SQLException ex){
+      System.out.println("SQLException: "+ex);
+      return false;
+    }
+      
+    // if (user.equals("scott") && passwd.equals("hobbes")) {
+    //   return true;
+    // }
+    // return false;
   }
 }
