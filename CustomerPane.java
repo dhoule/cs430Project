@@ -29,6 +29,7 @@ public class CustomerPane extends JPanel {
 
   // Just putting these here to make it easier/quicker to use
   JCheckBox songCH, albumCh, musicCh;
+  JTextField tfMName, tfATitle, tfSName;
 
   public CustomerPane() {
     super(false);
@@ -67,7 +68,7 @@ public class CustomerPane extends JPanel {
     // Input areas
     Container form = new Container();
     JLabel lblMName = new JLabel("Musician Name:");
-    JTextField tfMName = new JTextField(20);
+    tfMName = new JTextField(20);
     tfMName.setEnabled(false);
     lblMName.setLabelFor(tfMName);
     musicCh = new JCheckBox("Include");
@@ -82,7 +83,7 @@ public class CustomerPane extends JPanel {
     });
     
     JLabel lblATitle = new JLabel("Album Title:");
-    JTextField tfATitle = new JTextField(20);
+    tfATitle = new JTextField(20);
     tfATitle.setEnabled(false);
     lblATitle.setLabelFor(tfATitle);
     albumCh = new JCheckBox("Include");
@@ -97,7 +98,7 @@ public class CustomerPane extends JPanel {
     });
 
     JLabel lblSName = new JLabel("Song Name:");
-    JTextField tfSName = new JTextField(20);
+    tfSName = new JTextField(20);
     tfSName.setEnabled(false);
     lblSName.setLabelFor(tfSName);
     songCH = new JCheckBox("Include");
