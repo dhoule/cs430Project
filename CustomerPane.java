@@ -40,9 +40,10 @@ public class CustomerPane extends JPanel {
     super(false);
     
     JPanel top = createTopPanel();
-    JPanel bottom = new JPanel();
-    resultArea = new JTextArea(10, 20);
-    bottom.add(resultArea);
+    
+    resultArea = new JTextArea(10,15);
+    JScrollPane bottom = new JScrollPane(resultArea);
+    bottom.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
     // create a splitpane 
     JSplitPane sl = new JSplitPane(SwingConstants.HORIZONTAL, top, bottom);
@@ -280,6 +281,7 @@ public class CustomerPane extends JPanel {
         }
         
         resultArea.setText(result);
+        resultArea.revalidate(); // update `resultArea` and its scrollbars
       }
     });
 
