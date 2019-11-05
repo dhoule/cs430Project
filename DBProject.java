@@ -43,16 +43,7 @@ import cs430Project.StaffPane;
 
 public class DBProject extends JFrame {
   // Making these components global variables to be used elsewhere
-  private JMenuBar top; // The menu bar
-  private JTextArea display; // The display area
-
-  /* 
-   * TODO These need to be changed to actually do something.
-   */
-  String queryString="Select * from emp";    /*Create query string*/
-  // TODO credentials moved to tempStash
-  String result=new String();
-  StaffPane panel2;
+  private StaffPane panel2;
   /**
    * Class constructor
    **/
@@ -60,6 +51,9 @@ public class DBProject extends JFrame {
     // terminate the program via the window itself
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+    CustomerPane panel1 = new CustomerPane();
+    panel2 = new StaffPane();
+    
     JTabbedPane tabbedPane = new JTabbedPane() {
       public void setSelectedIndex(int index) {
         // Determine what tab has been selected; starts with 0
@@ -67,8 +61,9 @@ public class DBProject extends JFrame {
           // This is the "Staff Options"
           LoginPane loginP = new LoginPane(DBProject.this);
           loginP.setVisible(true);
-          
+          // only procede of login was successful
           if(loginP.isSucceeded()){
+            // set the username and password given by the "Staff"
             panel2.setUserName(loginP.getUsername());
             panel2.setPassword(loginP.getPassword());
             super.setSelectedIndex(index);
@@ -78,15 +73,14 @@ public class DBProject extends JFrame {
           }
         }
         else {
+          // if the tab changes, reset the StaffPane back to original settings
+          panel2.resetUserPsw();
           super.setSelectedIndex(index);
         }
       }
     };
     
-    CustomerPane panel1 = new CustomerPane();
     tabbedPane.addTab("Customer Options", panel1);
-
-    panel2 = new StaffPane();
     tabbedPane.addTab("Staff Options", panel2);
 
     //Add the tabbed pane to this panel.
