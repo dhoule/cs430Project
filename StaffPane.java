@@ -170,6 +170,7 @@ public class StaffPane extends JPanel {
             }
             // update the `results` JTextArea text
             results.setText(result);
+            results.revalidate();
             stmt.close();
             con.close();
           } catch(Exception ex) {
