@@ -30,15 +30,20 @@ public class CustomerPane extends JPanel {
   // Just putting these here to make it easier/quicker to use
   JCheckBox songCH, albumCh, musicCh;
   JTextField tfMName, tfATitle, tfSName;
+  JTextArea resultArea;
+  String user = System.getenv("CS430USR"); 
+  String passwd = System.getenv("CS430PSW"); 
+  String url = System.getenv("CS430URL"); 
 
+  // constructor
   public CustomerPane() {
     super(false);
     
     JPanel top = createTopPanel();
-
-    JPanel bottom = new JPanel();
-    JTextArea results = new JTextArea(10, 20);
-    bottom.add(results);
+    
+    resultArea = new JTextArea(10,15);
+    JScrollPane bottom = new JScrollPane(resultArea);
+    bottom.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
     // create a splitpane 
     JSplitPane sl = new JSplitPane(SwingConstants.HORIZONTAL, top, bottom);
@@ -46,6 +51,7 @@ public class CustomerPane extends JPanel {
     add(sl);
   }
 
+  // Creates the top JPanel
   protected JPanel createTopPanel() {
     JPanel top = new JPanel(); 
     top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
@@ -64,6 +70,7 @@ public class CustomerPane extends JPanel {
     return top;
   }
 
+  // Creates the input areas
   protected Container createInputForm() {
     // Input areas
     Container form = new Container();
@@ -72,6 +79,7 @@ public class CustomerPane extends JPanel {
     tfMName.setEnabled(false);
     lblMName.setLabelFor(tfMName);
     musicCh = new JCheckBox("Include");
+    // listener enables/disables the corresponding JTextField
     musicCh.addChangeListener(new ChangeListener() {
       @Override
       public void stateChanged(ChangeEvent e) {
@@ -87,6 +95,7 @@ public class CustomerPane extends JPanel {
     tfATitle.setEnabled(false);
     lblATitle.setLabelFor(tfATitle);
     albumCh = new JCheckBox("Include");
+    // listener enables/disables the corresponding JTextField
     albumCh.addChangeListener(new ChangeListener() {
       @Override
       public void stateChanged(ChangeEvent e) {
@@ -102,6 +111,7 @@ public class CustomerPane extends JPanel {
     tfSName.setEnabled(false);
     lblSName.setLabelFor(tfSName);
     songCH = new JCheckBox("Include");
+    // listener enables/disables the corresponding JTextField
     songCH.addChangeListener(new ChangeListener() {
       @Override
       public void stateChanged(ChangeEvent e) {
@@ -133,15 +143,6 @@ public class CustomerPane extends JPanel {
     Container select = new Container();
     select.setLayout(new BoxLayout(select, BoxLayout.LINE_AXIS));
 
-    // Create radio buttons
-    JRadioButton andBtn = new JRadioButton("AND");
-    andBtn.setSelected(true);
-    JRadioButton orBtn = new JRadioButton("OR");
-    // Grouping the radio button together
-    ButtonGroup group = new ButtonGroup();
-    group.add(andBtn);
-    group.add(orBtn);
-
     // create clear & submit buttons
     JButton clearBtn = new JButton("Clear");
     clearBtn.addActionListener(new ActionListener() {
@@ -150,16 +151,189 @@ public class CustomerPane extends JPanel {
         songCH.setSelected(false);
         albumCh.setSelected(false);
         musicCh.setSelected(false);
+        resultArea.setText(null);
       }
     });
     JButton submitBtn = new JButton("Submit");
+    submitBtn.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        resultArea.setText(null);
+        // Determine the selected input
+        int which = 0;
+        int song = 1;
+        int album = 2;
+        int music = 4;
+        if(songCH.isSelected()) { which = (which | song); }
+        if(albumCh.isSelected()) { which = (which | album); }
+        if(musicCh.isSelected()) { which = (which | music); }
 
-    select.add(andBtn);
-    select.add(orBtn);
+        String query = getQuery(which);
+        String result=new String();
+        Connection con;
+        PreparedStatement ps;
+        try {
+          con = DriverManager.getConnection(url,user,passwd);
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\n Could not connect to database." );
+          return;
+        }
+        try {
+          ps = con.prepareStatement(query);
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\n Could not prepare statement." );
+          return;
+        }
+        try {
+          
+          switch(which) {
+            case 1: // Song Name
+              ps.setString(1,tfSName.getText());
+              break;
+            case 2: // Album Title
+              ps.setString(1,tfATitle.getText());
+              break;
+            case 3: // Album Title + Song Name
+              ps.setString(1,tfATitle.getText());
+              ps.setString(2,tfSName.getText());
+              break;
+            case 4: // Musician Name
+              ps.setString(1,tfMName.getText());
+              break;
+            case 5: // Musician Name + Song Name
+              ps.setString(1,tfMName.getText());
+              ps.setString(2,tfSName.getText());
+              break;
+            case 6: // Musician Name + Album Title
+              ps.setString(1,tfMName.getText());
+              ps.setString(2,tfATitle.getText());
+              break;
+            case 7: // Musician Name + Album Title + Song Name
+              ps.setString(1,tfATitle.getText());
+              ps.setString(2,tfSName.getText());
+              ps.setString(3,tfMName.getText());
+              break;
+          }
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not give value to corresponding input.");
+          return;
+        }
+        ResultSet rs;
+        ResultSetMetaData rsmd;
+        
+        try {
+          rs = ps.executeQuery();
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not execute query.");
+          return;
+        }
+        try {
+          rsmd = ps.getMetaData();
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire metadata.");
+          return;
+        }
+        int numberofcolumn;
+        try {
+          numberofcolumn =rsmd.getColumnCount();
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire column headers.");
+          return;
+        }
+        String columnnames=new String("");
+        for(int i=1;i<=numberofcolumn;i++) { /*for loop needs to from 1 not 0*/
+          String name;
+          try {
+            name=rsmd.getColumnName(i);
+          } catch(SQLException sqlException) {
+            resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire column header.");
+            return;
+          }
+          columnnames=columnnames+"\t"+name;
+        }
+        result+=columnnames;
+        result+="\n";
+        try {
+          while (rs.next()) {
+            // Read each field of the row, and the for loop also begin with 1
+            for(int i = 1; i <= numberofcolumn; i++) {
+              String s;
+              try {
+                s=rs.getString(i);
+              } catch(SQLException sqlException) {
+                resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire record attribute.");
+                return;
+              }
+              result+="\t"+s;
+            }
+            result+="\n";
+          }
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire record attribute.");
+          return;
+        }
+
+        try {
+          ps.close();
+          con.close();
+        } catch(SQLException sqlException) {
+          resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not close connection.");
+          return;
+        }
+        
+        resultArea.setText(result);
+        resultArea.revalidate(); // update `resultArea` and its scrollbars
+      }
+    });
+
     select.add(clearBtn);
     select.add(submitBtn);
 
     return select;
+  }
+
+  // return the premade query, depending on the inputs selected
+  private String getQuery(int which) {
+    String query;
+    switch(which) {
+      case 1: // Song Name
+        query = new String("SELECT SONGS_APPEARS.title AS title, SONGS_APPEARS.author AS author, ALBUM_PRODUCER.title AS album, ALBUM_PRODUCER.copyrightDate AS CRDate " +
+          "FROM SONGS_APPEARS, ALBUM_PRODUCER, PERFORM, MUSICIANS " +
+          "WHERE SONGS_APPEARS.title = ? AND SONGS_APPEARS.albumIdentifier = SONGS_APPEARS.albumIdentifier AND SONGS_APPEARS.songId=PERFORM.songId AND PERFORM.ssn= MUSICIANS.ssn");
+        break;
+      case 2: // Album Title
+        query = new String("SELECT ALBUM_PRODUCER.title AS album, ALBUM_PRODUCER.copyrightDate AS CRDate, SONGS_APPEARS.title AS title, SONGS_APPEARS.author AS author, MUSICIANS.name AS name " +
+          "FROM MUSICIANS, PERFORM, SONGS_APPEARS, ALBUM_PRODUCER " +
+          "WHERE ALBUM_PRODUCER.title = ? AND ALBUM_PRODUCER.albumIdentifier = SONGS_APPEARS.albumIdentifier AND SONGS_APPEARS.songId = PERFORM.songId AND PERFORM.ssn = MUSICIANS.ssn");
+        break;
+      case 3: // Album Title + Song Name
+        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS title, MUSICIANS.name AS name " +
+          "FROM MUSICIANS, SONGS_APPEARS, ALBUM_PRODUCER, PERFORM " +
+          "WHERE ALBUM_PRODUCER.title = ? AND SONGS_APPEARS.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
+        break;
+      case 4: // Musician Name
+        query = new String("SELECT MUSICIANS.name AS name, SONGS_APPEARS.author AS author, SONGS_APPEARS.title AS title, ALBUM_PRODUCER.copyrightDate AS CRDate, ALBUM_PRODUCER.title AS album " +
+          "FROM MUSICIANS, PERFORM, SONGS_APPEARS, ALBUM_PRODUCER " +
+          "WHERE MUSICIANS.name = ? AND PERFORM.ssn = MUSICIANS.ssn AND PERFORM.songId = SONGS_APPEARS.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier" );
+        break;
+      case 5: // Musician Name + Song Name
+        query = new String("SELECT MUSICIANS.name AS name, SONGS_APPEARS.title AS title, ALBUM_PRODUCER.title AS album " +
+          "FROM MUSICIANS, SONGS_APPEARS, ALBUM_PRODUCER, PERFORM " +
+          "WHERE MUSICIANS.name = ? AND SONGS_APPEARS.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
+        break;
+      case 6: // Musician Name + Album Title
+        query = new String("SELECT MUSICIANS.name AS name, ALBUM_PRODUCER.copyrightDate AS CRDate, ALBUM_PRODUCER.title AS album, SONGS_APPEARS.author AS author " +
+          "FROM MUSICIANS, ALBUM_PRODUCER, PERFORM, SONGS_APPEARS " +
+          "WHERE MUSICIANS.name = ? AND ALBUM_PRODUCER.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND MUSICIANS.ssn = ALBUM_PRODUCER.ssn");
+        break;
+      case 7: // Musician Name + Album Title + Song Name
+        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS title, MUSICIANS.name AS name " +
+          "FROM MUSICIANS, SONGS_APPEARS, ALBUM_PRODUCER, PERFORM " +
+          "WHERE ALBUM_PRODUCER.title = ? AND SONGS_APPEARS.title = ? AND MUSICIANS.name = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
+        break;
+      default:
+        query = new String("1=0");
+    }
+    return query;
   }
 
 }
