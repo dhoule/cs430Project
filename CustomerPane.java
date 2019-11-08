@@ -44,6 +44,7 @@ public class CustomerPane extends JPanel {
     resultArea = new JTextArea(10,15);
     JScrollPane bottom = new JScrollPane(resultArea);
     bottom.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+    bottom.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
     // create a splitpane 
     JSplitPane sl = new JSplitPane(SwingConstants.HORIZONTAL, top, bottom);
@@ -187,31 +188,35 @@ public class CustomerPane extends JPanel {
           
           switch(which) {
             case 1: // Song Name
-              ps.setString(1,tfSName.getText());
+              ps.setString(1,tfSName.getText().trim());
               break;
             case 2: // Album Title
-              ps.setString(1,tfATitle.getText());
+              ps.setString(1,tfATitle.getText().trim());
               break;
             case 3: // Album Title + Song Name
-              ps.setString(1,tfATitle.getText());
-              ps.setString(2,tfSName.getText());
+              ps.setString(1,tfATitle.getText().trim());
+              ps.setString(2,tfSName.getText().trim());
               break;
             case 4: // Musician Name
-              ps.setString(1,tfMName.getText());
+              ps.setString(1,tfMName.getText().trim());
               break;
             case 5: // Musician Name + Song Name
-              ps.setString(1,tfMName.getText());
-              ps.setString(2,tfSName.getText());
+              ps.setString(1,tfMName.getText().trim());
+              ps.setString(2,tfSName.getText().trim());
               break;
             case 6: // Musician Name + Album Title
-              ps.setString(1,tfMName.getText());
-              ps.setString(2,tfATitle.getText());
+              ps.setString(1,tfMName.getText().trim());
+              ps.setString(2,tfATitle.getText().trim());
               break;
             case 7: // Musician Name + Album Title + Song Name
-              ps.setString(1,tfATitle.getText());
-              ps.setString(2,tfSName.getText());
-              ps.setString(3,tfMName.getText());
+              ps.setString(1,tfATitle.getText().trim());
+              ps.setString(2,tfSName.getText().trim());
+              ps.setString(3,tfMName.getText().trim());
               break;
+            default:
+              resultArea.setText("No results found.");
+              resultArea.revalidate();
+              return;
           }
         } catch(SQLException sqlException) {
           resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not give value to corresponding input.");
@@ -248,12 +253,14 @@ public class CustomerPane extends JPanel {
             resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire column header.");
             return;
           }
-          columnnames=columnnames+"\t"+name;
+          columnnames=columnnames+name+"\t";
         }
         result+=columnnames;
         result+="\n";
+        Boolean trip = true;
         try {
-          while (rs.next()) {
+          while (rs.next()) { 
+            trip = false;
             // Read each field of the row, and the for loop also begin with 1
             for(int i = 1; i <= numberofcolumn; i++) {
               String s;
@@ -263,7 +270,7 @@ public class CustomerPane extends JPanel {
                 resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not aquire record attribute.");
                 return;
               }
-              result+="\t"+s;
+              result+= s + "\t";
             }
             result+="\n";
           }
@@ -279,9 +286,13 @@ public class CustomerPane extends JPanel {
           resultArea.setText("Error: " + String.valueOf(sqlException.getErrorCode()) + "\nCould not close connection.");
           return;
         }
-        
-        resultArea.setText(result);
-        resultArea.revalidate(); // update `resultArea` and its scrollbars
+        if(trip) {
+          resultArea.setText("No results found.");
+          resultArea.revalidate();
+        } else {
+          resultArea.setText(result);
+          resultArea.revalidate(); // update `resultArea` and its scrollbars
+        }
       }
     });
 
@@ -296,37 +307,37 @@ public class CustomerPane extends JPanel {
     String query;
     switch(which) {
       case 1: // Song Name
-        query = new String("SELECT SONGS_APPEARS.title AS title, SONGS_APPEARS.author AS author, ALBUM_PRODUCER.title AS album, ALBUM_PRODUCER.copyrightDate AS CRDate " +
-          "FROM SONGS_APPEARS, ALBUM_PRODUCER, PERFORM, MUSICIANS " +
-          "WHERE SONGS_APPEARS.title = ? AND SONGS_APPEARS.albumIdentifier = SONGS_APPEARS.albumIdentifier AND SONGS_APPEARS.songId=PERFORM.songId AND PERFORM.ssn= MUSICIANS.ssn");
+        query = new String("SELECT SONGS_APPEARS.title AS song, SONGS_APPEARS.author AS author, ALBUM_PRODUCER.title AS album, ALBUM_PRODUCER.copyrightDate AS CRDate " +
+          "FROM SONGS_APPEARS, ALBUM_PRODUCER " +
+          "WHERE SONGS_APPEARS.title = ? AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
         break;
       case 2: // Album Title
-        query = new String("SELECT ALBUM_PRODUCER.title AS album, ALBUM_PRODUCER.copyrightDate AS CRDate, SONGS_APPEARS.title AS title, SONGS_APPEARS.author AS author, MUSICIANS.name AS name " +
+        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS song, SONGS_APPEARS.author AS author, MUSICIANS.name AS musician, ALBUM_PRODUCER.copyrightDate AS CRDate " +
           "FROM MUSICIANS, PERFORM, SONGS_APPEARS, ALBUM_PRODUCER " +
           "WHERE ALBUM_PRODUCER.title = ? AND ALBUM_PRODUCER.albumIdentifier = SONGS_APPEARS.albumIdentifier AND SONGS_APPEARS.songId = PERFORM.songId AND PERFORM.ssn = MUSICIANS.ssn");
         break;
       case 3: // Album Title + Song Name
-        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS title, MUSICIANS.name AS name " +
+        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS title, MUSICIANS.name AS musician " +
           "FROM MUSICIANS, SONGS_APPEARS, ALBUM_PRODUCER, PERFORM " +
           "WHERE ALBUM_PRODUCER.title = ? AND SONGS_APPEARS.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
         break;
       case 4: // Musician Name
-        query = new String("SELECT MUSICIANS.name AS name, SONGS_APPEARS.author AS author, SONGS_APPEARS.title AS title, ALBUM_PRODUCER.copyrightDate AS CRDate, ALBUM_PRODUCER.title AS album " +
+        query = new String("SELECT MUSICIANS.name AS musician, SONGS_APPEARS.author AS author, SONGS_APPEARS.title AS title, ALBUM_PRODUCER.copyrightDate AS CRDate, ALBUM_PRODUCER.title AS album " +
           "FROM MUSICIANS, PERFORM, SONGS_APPEARS, ALBUM_PRODUCER " +
           "WHERE MUSICIANS.name = ? AND PERFORM.ssn = MUSICIANS.ssn AND PERFORM.songId = SONGS_APPEARS.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier" );
         break;
       case 5: // Musician Name + Song Name
-        query = new String("SELECT MUSICIANS.name AS name, SONGS_APPEARS.title AS title, ALBUM_PRODUCER.title AS album " +
+        query = new String("SELECT MUSICIANS.name AS musician, SONGS_APPEARS.title AS title, ALBUM_PRODUCER.title AS album " +
           "FROM MUSICIANS, SONGS_APPEARS, ALBUM_PRODUCER, PERFORM " +
           "WHERE MUSICIANS.name = ? AND SONGS_APPEARS.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
         break;
       case 6: // Musician Name + Album Title
-        query = new String("SELECT MUSICIANS.name AS name, ALBUM_PRODUCER.copyrightDate AS CRDate, ALBUM_PRODUCER.title AS album, SONGS_APPEARS.author AS author " +
+        query = new String("SELECT MUSICIANS.name AS musician, ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS song, ALBUM_PRODUCER.copyrightDate AS CRDate " +
           "FROM MUSICIANS, ALBUM_PRODUCER, PERFORM, SONGS_APPEARS " +
-          "WHERE MUSICIANS.name = ? AND ALBUM_PRODUCER.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND MUSICIANS.ssn = ALBUM_PRODUCER.ssn");
+          "WHERE MUSICIANS.name = ? AND ALBUM_PRODUCER.title = ? AND MUSICIANS.ssn = PERFORM.ssn AND PERFORM.songId = SONGS_APPEARS.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
         break;
       case 7: // Musician Name + Album Title + Song Name
-        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS title, MUSICIANS.name AS name " +
+        query = new String("SELECT ALBUM_PRODUCER.title AS album, SONGS_APPEARS.title AS title, MUSICIANS.name AS musician, ALBUM_PRODUCER.copyrightDate AS CRDate " +
           "FROM MUSICIANS, SONGS_APPEARS, ALBUM_PRODUCER, PERFORM " +
           "WHERE ALBUM_PRODUCER.title = ? AND SONGS_APPEARS.title = ? AND MUSICIANS.name = ? AND MUSICIANS.ssn = PERFORM.ssn AND SONGS_APPEARS.songId = PERFORM.songId AND SONGS_APPEARS.albumIdentifier = ALBUM_PRODUCER.albumIdentifier");
         break;
