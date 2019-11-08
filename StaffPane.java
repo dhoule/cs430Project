@@ -33,7 +33,6 @@ public class StaffPane extends JPanel {
   // these variables are here so I don't have to pass them around
   JTextArea requestArea, results;
   String url = System.getenv("CS430URL"); 
-  private String result = new String();
   private String queryString = new String();
   private String startQueryMsg = new String("Input query here.");
   private String startResultMsg = new String("Results will appear here.");
@@ -88,11 +87,11 @@ public class StaffPane extends JPanel {
   protected JScrollPane createBottomPanel() {
     
     results = new JTextArea(startResultMsg);
-    results.setLineWrap(true);
 
     JScrollPane bottom = new JScrollPane(results);
     bottom.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-  
+    bottom.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    
     return bottom;
   }
 
@@ -116,6 +115,7 @@ public class StaffPane extends JPanel {
     
     JScrollPane scrollBox = new JScrollPane(requestArea);
     scrollBox.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+    scrollBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
     Container bottom = new Container();
     bottom.setLayout(new BoxLayout(bottom, BoxLayout.LINE_AXIS));
@@ -133,10 +133,20 @@ public class StaffPane extends JPanel {
     // gether the query and attempt to submit it to the DB server
     submitBtn.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        queryString = requestArea.getText();
-        
+        queryString = requestArea.getText().trim();
+        results.setText(null);
+        results.revalidate();
+        if(queryString.equals(startQueryMsg) || queryString.length() == 0) {
+          results.setText("No query given.");
+          results.revalidate();
+          return;
+        }
         if(queryString.toUpperCase().startsWith("DROP")) {
           results.setText("Not allowed to drop table.");
+          results.revalidate();
+        } else if (queryString.toUpperCase().startsWith("ALTER")) {
+          results.setText("Not allowed to alter table.");
+          results.revalidate();
         } else {
           try {
             // Register the oracle driver with DriverManager
@@ -146,31 +156,39 @@ public class StaffPane extends JPanel {
             return;
           }
           try {
-            results.setText(null);
+            
             Connection con=DriverManager.getConnection(url,usr,psw);
             Statement stmt=con.createStatement();
             ResultSet rs=stmt.executeQuery(queryString);
             ResultSetMetaData rsmd=rs.getMetaData();
             int numberofcolumn =rsmd.getColumnCount();
+            String result = new String();
             String columnnames=new String("");
+            Boolean trip = true;
             // for loop needs to from 1 not 0
             for(int i = 1; i <= numberofcolumn; i++) {
                String name=rsmd.getColumnName(i);
-               columnnames=columnnames+"\t"+name;
+               columnnames=columnnames+name+"\t";
             }
             result+=columnnames;
             result+="\n";
             while (rs.next()) {
-            //Read each field of the row, and the for loop also begin with 1
+              trip = false;
+              //Read each field of the row, and the for loop also begin with 1
               for(int i=1;i<=numberofcolumn;i++) {
                   String s=rs.getString(i);
-                  result+="\t"+s;
+                  result+= s + "\t";
               }
               result+="\n";
             }
             // update the `results` JTextArea text
-            results.setText(result);
-            results.revalidate();
+            if(trip) {
+              results.setText("No results found.");
+              results.revalidate();
+            } else {
+              results.setText(result);
+              results.revalidate();
+            }
             stmt.close();
             con.close();
           } catch(Exception ex) {
